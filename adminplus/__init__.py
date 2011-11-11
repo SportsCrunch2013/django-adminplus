@@ -10,24 +10,25 @@ class AdminSitePlus(AdminSite):
     index_template = 'adminplus/index.html'  # That was easy.
     custom_views = []
 
-    def register_view(self, path, view, name=None):
+    def register_view(self, path, view, name=None, title=None):
         """Add a custom admin view.
 
         * `path` is the path in the admin where the view will live, e.g.
             http://example.com/admin/somepath
         * `view` is any view function you can imagine.
-        * `name` is an optional pretty name for the list of custom views. If
+        * `name` is the reverse lookup name
+        * `title` is an optional pretty name for the list of custom views. If
             empty, we'll guess based on view.__name__.
         """
-        self.custom_views.append((path, view, name))
+        self.custom_views.append((path, view, name, title))
 
     def get_urls(self):
         """Add our custom views to the admin urlconf."""
         urls = super(AdminSitePlus, self).get_urls()
         from django.conf.urls.defaults import patterns, url
-        for path, view, name in self.custom_views:
+        for path, view, name, title in self.custom_views:
             urls += patterns('',
-                url(r'^%s$' % path, self.admin_view(view)),
+                url(r'^%s$' % path, self.admin_view(view), name=name),
             )
         return urls
 
@@ -35,8 +36,8 @@ class AdminSitePlus(AdminSite):
         """Make sure our list of custom views is on the index page."""
         if not extra_context:
             extra_context = {}
-        custom_list = [(path, name if name else
-                        capfirst(view.__name__)) for path, view, name in
+        custom_list = [(path, title if title else
+                        capfirst(view.__name__)) for path, view, name, title in
                         self.custom_views]
         # Sort views alphabetically.
         custom_list.sort(key=lambda x: x[1])
